@@ -26,8 +26,7 @@ edge_service = Service('PATH_TO/msedgedriver.exe')
 
 # Configure options for KPI dashboard (adjust the user data directory path as needed, same path as the default Edge user data directory can be used)
 options_KPI = Options()
-options_KPI.add_argument("--user-data-dir=PATH_TO/SAPDashboardUser")
-options_KPI.add_argument("--no-startup-window-restore")
+options_KPI.add_argument("--user-data-dir=PATH_TO/KPIDashboardUser")
 
 # Lunch Edge with the specified profile for KPI dashboard
 driver_KPI = webdriver.Edge(service=edge_service, options=options_KPI)
