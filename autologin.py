@@ -20,60 +20,119 @@ from selenium.webdriver.edge.service import Service
 from selenium.webdriver.edge.options import Options
 
 import time
+import logging
+
+# Logging configuration
+logging.basicConfig(
+    filename="autologin.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+logging.info("=== Autologin script started ===")
 
 # Path to msedgedriver.exe (adjust as needed)
-edge_service = Service('PATH_TO/msedgedriver.exe')
+edge_service = Service('C:/Users/elmouahids/OneDrive - Mubea/Dokumente/Porsche project/KPI scripts/edgedriver_win64/msedgedriver.exe')
 
-# Configure options for KPI dashboard (adjust the user data directory path as needed, same path as the default Edge user data directory can be used)
+# Path to the Edge user data directories folder (adjust as needed)
+user_data_dir = 'C:/Users/elmouahids/AppData/Local/Microsoft/Edge'
+
+# Configure options for KPI dashboard (adjust the user data directory path and name as needed)
 options_KPI = Options()
-options_KPI.add_argument("--user-data-dir=PATH_TO/KPIDashboardUser")
+options_KPI.add_argument(f'--user-data-dir={user_data_dir}/SAPDashboardUser')
 
-# Lunch Edge with the specified profile for KPI dashboard
-driver_KPI = webdriver.Edge(service=edge_service, options=options_KPI)
+try:
+    # Lunch Edge with the specified profile for KPI dashboard
+    driver_KPI = webdriver.Edge(service=edge_service, options=options_KPI)
 
-# Position and maximize the window on the secondary screen relative to the main screen (left side -1920, 0) (right side 1920, 0)
-driver_KPI.set_window_position(-1920, 0)
-driver_KPI.maximize_window()
+    # Position and maximize the window on the secondary screen relative to the main screen (left side -1920, 0) (right side 1920, 0)
+    driver_KPI.set_window_position(1920, 0)
+    driver_KPI.maximize_window()
 
-# Open KPI dashboard (adjust the URL as needed)
-driver_KPI.get('LINK_TO_KPI_DASHBOARD')
+    logging.info("KPI dashboard browser launched and positioned.")
+except Exception as e:
+    logging.error(f"Failed to launch KPI dashboard browser: {e}")
+    raise
 
-# Pause to allow the login page to load
-time.sleep(10)
+try:
+    # Open KPI dashboard (adjust the URL as needed)
+    driver_KPI.get('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login')
+
+    # Pause to allow the login page to load
+    time.sleep(3)
+
+    logging.info("KPI login page loaded.")
+except Exception as e:
+    logging.error(f"Failed to load KPI login page: {e}")
+    raise
 
 # connexion credentials for SAP (adjust as needed)
-sap_user = 'USERNAME'
-sap_pass = 'PASSWORD'
+sap_user = 'Admin'
+sap_pass = 'admin123'
 
-# Enter credentials in the login form
-user_input = driver_KPI.find_element(By.ID, 'j_username')
-user_input.send_keys(sap_user)
+try:
+    # Enter credentials in the login form
+    user_input = driver_KPI.find_element(By.NAME, 'username')
+    user_input.send_keys(sap_user)
 
-password_input = driver_KPI.find_element(By.ID, 'j_password')
-password_input.send_keys(sap_pass)
+    password_input = driver_KPI.find_element(By.NAME, 'password')
+    password_input.send_keys(sap_pass)
 
-# Connect by pressing Enter
-password_input.send_keys(Keys.RETURN)
+    # Connect by pressing Enter
+    password_input.send_keys(Keys.RETURN)
 
-# Pause to allow the KPI dashboard to load
-time.sleep(30)
+    # Pause to allow the KPI dashboard to load
+    time.sleep(3)
+    logging.info("SAP credentials entered and login attempted.")
+except Exception as e:
+    logging.error(f"Failed to enter SAP credentials or login: {e}")
+    raise
 
-# Path to the user data directory for POD (adjust as needed) it is recommended here to use the default Edge user data directory
-user_data_dir = 'PATH_TO/User Data'
-
-# Configure options for POD dashboard
+# Configure options for POD dashboard, using the default Edge user data directory is recommanded to keep the settings configuration
 options_POD = Options()
-options_POD.add_argument(f'--user-data-dir={user_data_dir}')
+options_POD.add_argument(f'--user-data-dir={user_data_dir}/User Data')
 
-# Lunch Edge with the specified profile for POD dashboard
-driver_POD = webdriver.Edge(service=edge_service, options=options_POD)
+try:
+    # Lunch Edge with the specified profile for POD dashboard
+    driver_POD = webdriver.Edge(service=edge_service, options=options_POD)
 
-# Position and maximize the window on the main screen
-driver_POD.set_window_position(0, 0)
-driver_POD.maximize_window()
+    # Position and maximize the window on the main screen
+    driver_POD.set_window_position(0, 0)
+    driver_POD.maximize_window()
 
-# Open POD dashboard (adjust the URL as needed)
-driver_POD.get('LINK_TO_POD_DASHBOARD')
+    logging.info("POD dashboard browser launched and positioned.")
+except Exception as e:
+    logging.error(f"Failed to launch POD dashboard browser: {e}")
+    raise
+
+try:
+    # Open POD dashboard (adjust the URL as needed)
+    driver_POD.get('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login')
+    
+    # Pause to allow the login page to load
+    time.sleep(3)  
+
+    logging.info("POD login page loaded.")
+except Exception as e:
+    logging.error(f"Failed to load POD login page: {e}")
+    raise
 
 while True:
-    time.sleep(86400)  # Keep the script running indefinitely
+    try:
+        # Simulate a click on the KPI dashboard browser to keep the SAP session active
+        driver_KPI.execute_script("document.body.dispatchEvent(new MouseEvent('click', {bubbles: true}));")
+    
+        logging.info("Simulated activity click on KPI dashboard.")
+    except Exception as e:
+        logging.error(f"Error during simulated click: {e}")
+
+    try:
+        # heartbeat
+        with open("heartbeat.txt", "w") as f:
+            f.write("up")
+        logging.info("Heartbeat signaled.")
+    except Exception as e:
+        logging.error(f"Failed to update heartbeat: {e}")
+
+    time.sleep(120)  # Click and heartbeat every 2 minutes
+
