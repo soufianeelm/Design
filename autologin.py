@@ -24,7 +24,7 @@ import logging
 
 # Logging configuration
 logging.basicConfig(
-    filename="autologin.log",
+    filename="C:/Users/XXX/Autologin/autologin.log",
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -32,21 +32,21 @@ logging.basicConfig(
 logging.info("=== Autologin script started ===")
 
 # Path to msedgedriver.exe (adjust as needed)
-edge_service = Service('C:/Users/selmo/Documents/mubea/edgedriver_win64/msedgedriver.exe')
+edge_service = Service('C:/Users/XXX/Autologin/edgedriver_win64/msedgedriver.exe')
 
 # Path to the Edge user data directories folder (adjust as needed)
-user_data_dir = 'C:/Users/selmo/AppData/local/Microsoft/Edge'
+user_data_dir = 'C:/Users/XXX/AppData/local/Microsoft/Edge'
 
 # Configure options for KPI dashboard (adjust the user data directory path and name as needed)
 options_KPI = Options()
-options_KPI.add_argument(f'--user-data-dir={user_data_dir}/SAPDashboardUser')
+options_KPI.add_argument(f'--user-data-dir={user_data_dir}/KPIDashboardUser')
 
 try:
     # Lunch Edge with the specified profile for KPI dashboard
     driver_KPI = webdriver.Edge(service=edge_service, options=options_KPI)
 
     # Position and maximize the window on the secondary screen relative to the main screen (left side -1920, 0) (right side 1920, 0)
-    driver_KPI.set_window_position(1920, 0)
+    driver_KPI.set_window_position(-1920, 0)
     driver_KPI.maximize_window()
 
     logging.info("KPI dashboard browser launched and positioned.")
@@ -56,7 +56,7 @@ except Exception as e:
 
 try:
     # Open KPI dashboard (adjust the URL as needed)
-    driver_KPI.get('https://www.netflix.com/browse')
+    driver_KPI.get('XXX')
 
     # Pause to allow the login page to load
     time.sleep(3)
@@ -67,19 +67,19 @@ except Exception as e:
     raise
 
 # connexion credentials for SAP (adjust as needed)
-sap_user = 'Admin'
-sap_pass = 'admin123'
+sap_user = ''
+sap_pass = ''
 
 try:
     # Enter credentials in the login form
-    # user_input = driver_KPI.find_element(By.NAME, 'username')
-    # user_input.send_keys(sap_user)
+    user_input = driver_KPI.find_element(By.ID, 'j_username')
+    user_input.send_keys(sap_user)
 
-    # password_input = driver_KPI.find_element(By.NAME, 'password')
-    # password_input.send_keys(sap_pass)
+    password_input = driver_KPI.find_element(By.ID, 'j_password')
+    password_input.send_keys(sap_pass)
 
-    # # Connect by pressing Enter
-    # password_input.send_keys(Keys.RETURN)
+    # Connect by pressing Enter
+    password_input.send_keys(Keys.RETURN)
 
     # Pause to allow the KPI dashboard to load
     time.sleep(3)
@@ -107,7 +107,7 @@ except Exception as e:
 
 try:
     # Open POD dashboard (adjust the URL as needed)
-    driver_POD.get('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login')
+    driver_POD.get('XXX')
     
     # Pause to allow the login page to load
     time.sleep(3)  
@@ -131,7 +131,7 @@ while True:
     if HEARTBEAT_TIME <= 0:
         try:
             # heartbeat
-            with open("heartbeat.txt", "w") as f:
+            with open("C:/Users/XXX/Autologin/heartbeat.txt", "w") as f:
                 f.write("up")
             logging.info("Heartbeat signaled.")
             HEARTBEAT_TIME = 120  # Reset heartbeat time to 2 minutes

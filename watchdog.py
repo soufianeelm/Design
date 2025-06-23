@@ -20,12 +20,12 @@ import os
 import pygetwindow as gw
 from datetime import datetime, timedelta
 
-SCRIPT_CMD = ["autologin.exe"]
-HEARTBEAT_PATH = "heartbeat.txt"
+SCRIPT_CMD = ["python", "C:/Users/XXX/Autologin/autologin.py"]
+HEARTBEAT_PATH = "C:/Users/XXX/Autologin/heartbeat.txt"
 TIMEOUT_SECONDS = 300  # 5 minutes without heartbeat = freeze detected
 
 logging.basicConfig(
-    filename="watchdog.log",
+    filename="C:/Users/XXX/Autologin/watchdog.log",
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -44,8 +44,8 @@ def both_windows_open():
     windows = gw.getWindowsWithTitle("")
     titles = [w.title for w in windows if w.title.strip() != ""]
 
-    kpi_found = any("Netflix" in t or "KPI" in t for t in titles)
-    pod_found = any("OrangeHRM" in t or "Dashboard" in t for t in titles)
+    kpi_found = any("Dashboards" in t for t in titles)
+    pod_found = any("POD" in t or "SAP" in t for t in titles)
 
     return kpi_found and pod_found
 
@@ -56,7 +56,7 @@ def kill_process_tree(pid):
         for child in children:
             child.kill()
         parent.kill()
-        logging.warning(f"Process {pid} and it's child processes have been killed.")
+        logging.warning(f"Process autologin (PID {pid}) and its child processes have been killed.")
     except psutil.NoSuchProcess:
         logging.error(f"Process {pid} is already done.")
 
@@ -72,7 +72,7 @@ def kill_all_msedge():
 def log_kill(pid, reason):
     logging.error(reason)
 
-    subprocess.Popen(["start", "cmd", "/c", "python", "error_popup.py"], shell=True)
+    subprocess.Popen(["start", "cmd", "/c", "python", "C:/Users/XXX/Autologin/error_popup.py"], shell=True)
 
     time.sleep(10)  # Wait for the popup to be displayed
 
