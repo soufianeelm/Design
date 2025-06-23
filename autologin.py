@@ -32,10 +32,10 @@ logging.basicConfig(
 logging.info("=== Autologin script started ===")
 
 # Path to msedgedriver.exe (adjust as needed)
-edge_service = Service('C:/Users/elmouahids/OneDrive - Mubea/Dokumente/Porsche project/KPI scripts/edgedriver_win64/msedgedriver.exe')
+edge_service = Service('C:/Users/selmo/Documents/mubea/edgedriver_win64/msedgedriver.exe')
 
 # Path to the Edge user data directories folder (adjust as needed)
-user_data_dir = 'C:/Users/elmouahids/AppData/Local/Microsoft/Edge'
+user_data_dir = 'C:/Users/selmo/AppData/local/Microsoft/Edge'
 
 # Configure options for KPI dashboard (adjust the user data directory path and name as needed)
 options_KPI = Options()
@@ -56,7 +56,7 @@ except Exception as e:
 
 try:
     # Open KPI dashboard (adjust the URL as needed)
-    driver_KPI.get('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login')
+    driver_KPI.get('https://www.netflix.com/browse')
 
     # Pause to allow the login page to load
     time.sleep(3)
@@ -72,14 +72,14 @@ sap_pass = 'admin123'
 
 try:
     # Enter credentials in the login form
-    user_input = driver_KPI.find_element(By.NAME, 'username')
-    user_input.send_keys(sap_user)
+    # user_input = driver_KPI.find_element(By.NAME, 'username')
+    # user_input.send_keys(sap_user)
 
-    password_input = driver_KPI.find_element(By.NAME, 'password')
-    password_input.send_keys(sap_pass)
+    # password_input = driver_KPI.find_element(By.NAME, 'password')
+    # password_input.send_keys(sap_pass)
 
-    # Connect by pressing Enter
-    password_input.send_keys(Keys.RETURN)
+    # # Connect by pressing Enter
+    # password_input.send_keys(Keys.RETURN)
 
     # Pause to allow the KPI dashboard to load
     time.sleep(3)
@@ -117,6 +117,8 @@ except Exception as e:
     logging.error(f"Failed to load POD login page: {e}")
     raise
 
+HEARTBEAT_TIME = 0
+
 while True:
     try:
         # Simulate a click on the KPI dashboard browser to keep the SAP session active
@@ -126,13 +128,17 @@ while True:
     except Exception as e:
         logging.error(f"Error during simulated click: {e}")
 
-    try:
-        # heartbeat
-        with open("heartbeat.txt", "w") as f:
-            f.write("up")
-        logging.info("Heartbeat signaled.")
-    except Exception as e:
-        logging.error(f"Failed to update heartbeat: {e}")
+    if HEARTBEAT_TIME <= 0:
+        try:
+            # heartbeat
+            with open("heartbeat.txt", "w") as f:
+                f.write("up")
+            logging.info("Heartbeat signaled.")
+            HEARTBEAT_TIME = 120  # Reset heartbeat time to 2 minutes
+        except Exception as e:
+            logging.error(f"Failed to update heartbeat: {e}")
 
-    time.sleep(120)  # Click and heartbeat every 2 minutes
+    HEARTBEAT_TIME -= 5
+
+    time.sleep(5)  # Click every 5 seconds
 

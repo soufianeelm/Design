@@ -17,9 +17,10 @@ import subprocess
 import time
 import logging
 import os
+import pygetwindow as gw
 from datetime import datetime, timedelta
 
-SCRIPT_CMD = ["python", "autologin.py"]
+SCRIPT_CMD = ["autologin.exe"]
 HEARTBEAT_PATH = "heartbeat.txt"
 TIMEOUT_SECONDS = 300  # 5 minutes without heartbeat = freeze detected
 
@@ -36,8 +37,17 @@ def is_heartbeat_stale():
         mod_time = datetime.fromtimestamp(os.path.getmtime(HEARTBEAT_PATH))
         return (datetime.now() - mod_time) > timedelta(seconds=TIMEOUT_SECONDS)
     except Exception as e:
-        logging.warning(f"Impossible to read the heartbeat : {e}")
+        logging.error(f"Impossible to read the heartbeat : {e}")
         return True
+    
+def both_windows_open():
+    windows = gw.getWindowsWithTitle("")
+    titles = [w.title for w in windows if w.title.strip() != ""]
+
+    kpi_found = any("Netflix" in t or "KPI" in t for t in titles)
+    pod_found = any("OrangeHRM" in t or "Dashboard" in t for t in titles)
+
+    return kpi_found and pod_found
 
 def kill_process_tree(pid):
     try:
@@ -48,38 +58,69 @@ def kill_process_tree(pid):
         parent.kill()
         logging.warning(f"Process {pid} and it's child processes have been killed.")
     except psutil.NoSuchProcess:
-        logging.warning(f"Process {pid} already done.")
+        logging.error(f"Process {pid} is already done.")
 
+def kill_all_msedge():
+    for proc in psutil.process_iter(attrs=["pid", "name"]):
+        if proc.info["name"] and proc.info["name"].lower() == "msedge.exe":
+            try:
+                psutil.Process(proc.info["pid"]).kill()
+                logging.warning(f"Process msedge (PID {proc.info['pid']}) killed before autologin start.")
+            except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                logging.error(f"Could not kill msedge (PID {proc.info['pid']}): {e}")
+
+def log_kill(pid, reason):
+    logging.error(reason)
+
+    subprocess.Popen(["start", "cmd", "/c", "python", "error_popup.py"], shell=True)
+
+    time.sleep(10)  # Wait for the popup to be displayed
+
+    kill_process_tree(pid)
+    
 while True:
-    logging.info("Initializing autologin.py")
-    process = subprocess.Popen(SCRIPT_CMD)
-    time.sleep(30) # Wait for the autologin script to initialize
+    logging.info("------------------------------------------------")
+    logging.info("=== Initializing autologin.py ===")
+
+    kill_all_msedge()  # Ensure no Edge processes are running before starting the script
+    
+    try:
+        process = subprocess.Popen(SCRIPT_CMD)
+        time.sleep(30) # Wait for the autologin script to initialize
+        logging.info("autologin.py started successfully.")
+    except Exception as e:
+        logging.error(f"Failed to start autologin.py: {e}")
+        continue
+    logging.info("Monitoring autologin.py...")
+
+    loop_count = 0
 
     while True:
-        time.sleep(10) # Check its state every 10 seconds
+        loop_count += 1
 
         # Check if the autologin process is still running
         if process.poll() is not None:
-            logging.warning("autologin.py has terminated. Reboot.")
+            log_kill(process.pid, "autologin.py has unexpectedly stopped running.")
             break
-        
-        logging.info("autologin.py is running.")
+        if loop_count >= 6:
+            logging.info("autologin.py is running.")
 
         # Check if the heartbeat file is stale
         if is_heartbeat_stale():
-            logging.error("Freeze detected : no recent heartbeat. Reboot.")
-
-            try:
-                kill_process_tree(process.pid)
-                time.sleep(2)
-            except Exception as e:
-                logging.error(f"Failed to kill autologin.py process: {e}")
-                raise
+            log_kill(process.pid, "Freeze detected : no recent heartbeat.")
             break
+        if loop_count >= 6:
+            logging.info("Heartbeat is fresh.")
 
-        logging.info("Heartbeat is fresh.")
+        # Check if both Edge windows are still open
+        if not both_windows_open():
+            log_kill(process.pid, "One of the Edge windows was closed manually.")
+            break
+        if loop_count >= 6:
+            logging.info("Both Edge windows are open.")
+            loop_count = 0
 
-        # Maybe add a check to ensure both browsers are open (if a browser is closed but not due to an error, the program won't detect it)
+        time.sleep(10) # Check its state every 10 seconds
 
-    logging.info("Autologin script reboot in 5 seconds.")
+    logging.warning("Autologin script reboot in 5 seconds.")
     time.sleep(5)  # Wait before restarting the script
